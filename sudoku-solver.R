@@ -51,8 +51,13 @@ repeat{
 		for(i in 1:3){
 			for(j in 1:3){
 				if(!k %in% data[i,] & !k %in% data[,j] & !k %in% data[1:3, 1:3] & is.na(data[i,j])){alt[i,j,k] <- k}
+				
 			}
 		}
+		if(sum(!is.na(alt[,,k])) == 1){
+			dum <- which(alt[,,k] == k, arr.ind = TRUE)
+			data[dum[1,1], dum[1,2]] <- k
+			}
 	}
 	
 	
