@@ -2,22 +2,23 @@
 # Sudoku Solver -----------------------------------------------------------
 
 data <- matrix(nrow=9, ncol=9)
+alt <- array(dim=c(9,9,9))
 
-f1 <- c(2, NA, NA, 8, NA, 4, NA, NA, 6)
-f2 <- c(NA, NA, 6, NA, NA, NA, 5, NA, NA)
-f3 <- c(NA, 7, 4, NA, NA, NA, 9, 2, NA)
-f4 <- c(3, NA, NA, NA, 4, NA, NA, NA, 7)
-f5 <- c(NA, NA, NA, 3, NA, 5, NA, NA, NA)
-f6 <- c(4, NA, NA, NA, 6, NA, NA, NA, 9)
-f7 <- c(NA, 1, 9, NA, NA, NA, 7, 4, NA)
-f8 <- c(NA, NA, 8, NA, NA, NA, 2, NA, NA)
-f9 <- c(5, NA, NA, 6, NA, 8, NA, NA, 1)
+f1 <- c(NA, NA, 9, NA, NA, 2, 4, NA, NA)
+f2 <- c(NA, 7, 4, NA, 9, 1, NA, NA, NA)
+f3 <- c(NA, NA, NA, 4, NA, NA, 6, 9, 7)
+f4 <- c(2, 9, 8, NA, NA, NA, 7, NA, NA)
+f5 <- c(NA, 1, NA, NA, NA, NA, NA, 2, NA)
+f6 <- c(NA, NA, 3, NA, NA, NA, 8, 5, 1)
+f7 <- c(1, 8, 6, NA, NA, 4, NA, NA, NA)
+f8 <- c(NA, NA, NA, 8, 3, NA, 1, 6, NA)
+f9 <- c(NA, NA, 2, 1, NA, NA, 9, NA, NA)
+
+k <- 0
 
 data = t(as.matrix(cbind(f1, f2, f3, f4, f5, f6, f7, f8, f9)))
 original <- data
 repeat{
-	i <- 1
-	j <- 1
 	print(sum(is.na(data)))
 	for(i in 1:9){
 		for(j in 1:9){
@@ -42,9 +43,20 @@ repeat{
 				poss <- poss[! poss %in% remove]
 				
 				if(length(poss) == 1){data[i,j] <- poss}
+				
 			}
 		}
 	}
+	for(k in 1:9){
+		for(i in 1:3){
+			for(j in 1:3){
+				if(!k %in% data[i,] & !k %in% data[,j] & !k %in% data[1:3, 1:3] & is.na(data[i,j])){alt[i,j,k] <- k}
+			}
+		}
+	}
+	
+	
 	if(sum(is.na(data))==0){break}
 }
 data
+
