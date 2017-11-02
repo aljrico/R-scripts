@@ -1,5 +1,9 @@
 
 # Sudoku Solver -----------------------------------------------------------
+# Author: Alejandro Jiménez Rico <aljrico@gmail.com>
+
+# Disclaimer: This sudoku solver does not handle problems in a 'hard' category. This category system is the usual used in many publications, which differentiates EASY, MEDIUM and HARD. This script is able to solve those classified as EASY or MEDIUM, but not HARD. Further work is needed.
+
 
 data <- matrix(nrow=9, ncol=9)
 alt <- array(dim=c(9,9,9))
@@ -20,6 +24,8 @@ data = t(as.matrix(cbind(f1, f2, f3, f4, f5, f6, f7, f8, f9)))
 original <- data
 repeat{
 	print(sum(is.na(data)))
+	
+	# This double loop solves all sudokus classified as 'easy'.
 	for(i in 1:9){
 		for(j in 1:9){
 			if(is.na(data[i,j])){
@@ -47,6 +53,8 @@ repeat{
 			}
 		}
 	}
+	
+	# This triple loop manages to solve every 'medium' difficulty sudoku.
 	for(k in 1:9){
 		for(i in 1:3){
 			for(j in 1:3){
