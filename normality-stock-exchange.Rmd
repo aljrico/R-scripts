@@ -1,0 +1,35 @@
+---
+title: "Testint the Normality of the Stock Market Returns"
+output: html_notebook
+---
+
+The normality of the log-returns for the price of the stocks is one of the most popular assumptions in mathematical finance. Usually is assumed that the price dynamics of the stocks are driven by geometric Brownian motion and, thus the log-return of the prices are independent and normally distributed.
+
+
+```{r }
+library("quantmod")
+library("nortest")
+```
+
+We firstly load the database of the stock exchange subject to study, and from that we exctract the adjusted final price of each day. A simple plot will let us take a look at what we have.
+
+```{r}
+sp500 <- new.env()
+getSymbols("^GSPC", env = sp500, src = "yahoo", from = as.Date("1950-01-01"), to = as.Date("2017-12-31"))
+GSPC <- sp500$GSPC
+plot(GSPC$GSPC.Adjusted, type ="h", main="S&P 500", ylim = c(0, max(GSPC$GSPC.Adjusted)))
+```
+
+For this work, we would like to study the logreturn of the price; defined as the difference of the logarithm of the price. Is interesting to notice some historically relevant outliers.
+
+```{r}
+lr <- diff(log(GSPC$GSPC.Adjusted))
+plot(lr, main = "S&P daily logreturn", ylab="logreturn")
+```
+
+A histogram showing the frequency of these logreturns should hint us about the normality of its distribution.
+
+```{r}
+hlr <- hist(lr, main = "Histogram for S&P daily logreturn", xlab="logreturn", ylab="normalized frequency", border="blue", col="green", xlim=c(-0.1,0.1), las=1, breaks=500, prob=TRUE)
+```
+Is this normal? At first glance does not look  exactly symmetric and it has an 
