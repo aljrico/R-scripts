@@ -6,7 +6,7 @@ output: html_notebook
 The normality of the log-returns for the price of the stocks is one of the most popular assumptions in mathematical finance. Usually is assumed that the price dynamics of the stocks are driven by geometric Brownian motion and, thus the log-return of the prices are independent and normally distributed.
 
 
-```{r }
+```{r include=FALSE}
 library("quantmod")
 library("nortest")
 ```
@@ -32,4 +32,4 @@ A histogram showing the frequency of these logreturns should hint us about the n
 ```{r}
 hlr <- hist(lr, main = "Histogram for S&P daily logreturn", xlab="logreturn", ylab="normalized frequency", border="blue", col="green", xlim=c(-0.1,0.1), las=1, breaks=500, prob=TRUE)
 ```
-Is this normal? At first glance does not look  exactly symmetric and it has an 
+Is this a *normal* distribution? At first glance does not look exactly symmetric
