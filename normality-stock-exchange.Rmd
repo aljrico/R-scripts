@@ -1,15 +1,18 @@
 ---
-title: "Testint the Normality of the Stock Market Returns"
+title: "Testint the Normality Independence of the Stock Market Returns"
 output: html_notebook
 ---
 
-The normality of the log-returns for the price of the stocks is one of the most popular assumptions in mathematical finance. Usually is assumed that the price dynamics of the stocks are driven by geometric Brownian motion and, thus the log-return of the prices are independent and normally distributed.
+The study of the log-returns for the price of the stocks is one of the most popular metric in mathematical finance. Usually is assumed that the price dynamics of the stocks are driven by geometric Brownian motion and thus, the log-return of the prices are **independent** and **normally distributed**.
 
 
 ```{r include=FALSE}
 library("quantmod")
 library("nortest")
+library("tseries")
 ```
+
+# Getting Data
 
 We firstly load the database of the stock exchange subject to study, and from that we exctract the adjusted final price of each day. A simple plot will let us take a look at what we have.
 
@@ -27,6 +30,8 @@ lr <- diff(log(GSPC$GSPC.Adjusted))
 plot(lr, main = "S&P daily logreturn", ylab="logreturn")
 ```
 
+# Normality
+
 A histogram showing the frequency of these logreturns should hint us about the normality of its distribution.
 
 ```{r}
@@ -39,3 +44,25 @@ Is this a *normal* distribution? There are several different means to check thte
 ad.test(lr)
 ```
 Knowing that the null hypothesis of this test is the normality of the distribution, such small p-value leads us to reject the assumption of normality of our data.
+
+# Independence
+
+When a newcommer arrives into the financial world, one common chimera is to find patters in the time series of price in order to predict future prices. No one can be blamed for that dream, for such ability would harvest a lot of money.
+
+One reasonable question to ask would be whether or not some patterns do exist in the stock exchange price time series. We start taking a look at the autocorrelation function.
+
+```{r}
+corr <- acf(lr, na.action = na.pass)
+plot(corr)
+```
+Is not easy to extract conclusions from this plot. There are some values different of 0; but these values are small enough to not consider its correaltions strong enough.
+
+One simple way to address this enigma would be testing the time independence of the values of the price time series.
+
+```{r}
+mean <- mean(lr, na.rm = TRUE) 
+lr[is.na(lr)] <- mean
+adf.test(lr)
+```
+
+This *Augmented Dickey-Fuller test* gives us a formal rejection of the time dependence or our series.
