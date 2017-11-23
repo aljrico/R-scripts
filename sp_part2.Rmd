@@ -1,0 +1,102 @@
+---
+title: "SP test - Part 2"
+output: html_notebook
+---
+
+# Step 1
+
+**Please calculate the 2nd day, 7th day and 10th day retention (which is the percentage of people that downloaded the game on day 1 who played again on day 2, 7 and 10). Please calculate the retention in two ways, using the user id (user_id) and then the device id (client_mobile_device_aid). (Please note that you only have the device id from the 14th of April).**
+
+```{r message = FALSE}
+library(data.table)
+library(tidyverse)
+library(lubridate)
+
+raw.user <- fread('data/sh_user.csv')
+raw.session <- fread('data/sh_session.csv')
+raw.battles <- fread('data/sh_battles.csv')
+```
+
+```{r}
+glimpse(raw.user)
+glimpse(raw.session)
+glimpse(raw.battles)
+```
+
+Let's get the date of registration of every user
+
+```{r}
+df.registration <- raw.user[,c("user_id", "date_register")]
+
+```
+
+
+We should check for duplicates
+```{r}
+
+length(df.registration$user_id) - length(unique(df.registration$user_id))
+df <- df.registration %>% 
+	group_by(user_id) %>% 
+	summarise(N=n())
+
+unique(df$N)
+```
+
+There are 63 people who has been registered twice.
+
+```{r}
+users.twice <- df[df[,2] == 2,1]
+double.registration <- df.registration[df.registration$user_id %in% as.array(users.twice$user_id)]
+
+double.registration <- double.registration %>% 
+	group_by(user_id) %>% 
+	summarise(unique = n_distinct(date_register))
+	
+unique(double.registration$unique)
+```
+
+But those who registered twice, did it both times on the same day. So we can discard duplicated registration records and move on.
+
+```{r}
+reg <- df.registration[!duplicated(df.registration[,'user_id']),]
+rm(df,df.registration,double.registration,users.twice)
+```
+
+```{r}
+con <- raw.session[,c("user_id", "datetime")]
+
+df <- merge(reg,con)
+df <- df %>% 
+	mutate(date_register = ymd(date_register)) %>% 
+	mutate(datetime = ymd(datetime))
+
+df$ret <- df$datetime - df$date_register +1
+df <- df %>% 
+	mutate(ret = as.numeric(ret))
+df <- df[,c(1,4)]
+df <- df[!duplicated(df[,c('user_id','ret')]),]
+```
+
+Now we just plot the results
+
+```{r}
+library(scales)
+ret <- as.data.frame(table(df$ret))
+ret$Freq <- as.numeric(ret$Freq/sum(ret$Freq))
+ret$Var1 <- as.numeric(ret$Var1)
+ret$colour <- ifelse(ret$Var1 == 2 | ret$Var1 == 7 | ret$Var1 == 10, "yellow", "blue")
+
+gg <- ggplot(ret,  aes(x=Var1, y=Freq, fill=colour)) +
+	geom_bar(stat="identity") +
+	scale_y_continuous(labels = percent_format()) +
+	scale_x_continuous(limits=c(0,15)) +
+	scale_fill_manual(values=c("blue", "yellow"))
+	
+gg
+```
+
+
+```{r}
+table(df$ret)
+```
+

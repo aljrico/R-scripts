@@ -37,15 +37,15 @@ GROUP BY Country, User_id;
 
 ######### DARPPU (daily average revenue per payer) by day
 
-SELECT User_id, CONVERT(`Date and time`, getdate()), AVG(dollar_net)
+SELECT User_id, AVG(dollar_net)
 FROM Transaction_Table
-GROUP BY User_id;
+GROUP BY CONVERT(`Date and time`, getdate());
 
 ###################################################################
 
 ######## DARPU (daily average revenues per active user) by day
 
-SELECT
+SELECT COUNT(*), CONVERT(`Date and time`, getdate())
 
 
 
