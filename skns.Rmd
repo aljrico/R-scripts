@@ -1,0 +1,55 @@
+---
+title: "Exercise about light consumption"
+output:
+  html_document:
+    df_print: paged
+---
+
+Load Data
+
+```{r}
+library('data.table')
+
+pathfile = 'data/light.csv'
+raw.data <- fread(pathfile)
+```
+
+Get a brief look at the data
+
+```{r}
+summary(raw.data)
+```
+
+Adjust first model and watch its summary.
+
+```{r}
+model <- glm(Occupancy~., data = raw.data, family = binomial)
+
+summary(model)
+```
+
+Clean non-relevant variables and repeat
+
+```{r}
+clean.data <- raw.data[,c(3,5,9,10,12)]
+
+model2 <- glm(Occupancy~., data = clean.data, family = binomial)
+
+summary(model2)
+```
+
+Iterate
+
+```{r}
+cleaner.data <- clean.data[,c(-2)]
+
+
+model3 <- glm(Occupancy~., data = cleaner.data, family = binomial)
+
+summary(model3)
+```
+
+Great, all variables present in the model are relevant.
+
+
+
