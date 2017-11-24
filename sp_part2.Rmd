@@ -12,6 +12,10 @@ library(data.table)
 library(tidyverse)
 library(lubridate)
 
+percent <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
+}
+
 raw.user <- fread('data/sh_user.csv')
 raw.session <- fread('data/sh_session.csv')
 raw.battles <- fread('data/sh_battles.csv')
@@ -90,7 +94,8 @@ gg <- ggplot(ret,  aes(x=Var1, y=Freq, fill=colour)) +
 	geom_bar(stat="identity") +
 	scale_y_continuous(labels = percent_format()) +
 	scale_x_continuous(limits=c(0,15)) +
-	scale_fill_manual(values=c("blue", "yellow"))
+	scale_fill_manual(values=c("blue", "yellow")) +
+	geom_text(aes(label=ifelse(Var1 == 2 | Var1 == 7 | Var1 == 10, percent(round(Freq, digits= 4)), "")), vjust = -0.4, hjust = +0.35, size = 4)
 	
 gg
 ```

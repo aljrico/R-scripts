@@ -14,6 +14,16 @@ CREATE TABLE `session` (
 	`country` varchar(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+DROP TABLE IF EXISTS `transaction`;
+
+CREATE TABLE `transaction` (
+	`user` varchar(30) NOT NULL,
+	`date` datetime,
+	`dollar_net` varchar(30) NOT NULL,
+	`session_id` varchar(30) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
 LOAD DATA INFILE 'data/file.csv'
 INTO TALBE table_name;
 
@@ -29,11 +39,18 @@ GROUP BY country, user, DATE(date);
 
 SELECT DATE(date), AVG(dollar_net)
 FROM transaction
-GROUP BY DATE(date), user;
+GROUP BY DATE(date);
 
 ###################################################################
 
 ######## DARPU (daily average revenues per active user) by day
+
+SELECT DATE(transaction.date), SUM(transaction.dollar_net)
+FROM transaction
+GROUP BY DATE(transaction.date);
+
+
+
 
 
 
