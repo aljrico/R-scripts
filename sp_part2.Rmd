@@ -11,6 +11,7 @@ output: html_notebook
 library(data.table)
 library(tidyverse)
 library(lubridate)
+library(viridis)
 
 percent <- function(x, digits = 2, format = "f", ...) {
   paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
@@ -92,16 +93,54 @@ ret$colour <- ifelse(ret$Var1 == 2 | ret$Var1 == 7 | ret$Var1 == 10, "yellow", "
 
 gg <- ggplot(ret,  aes(x=Var1, y=Freq, fill=colour)) +
 	geom_bar(stat="identity") +
-	scale_y_continuous(labels = percent_format()) +
-	scale_x_continuous(limits=c(0,15)) +
-	scale_fill_manual(values=c("blue", "yellow")) +
-	geom_text(aes(label=ifelse(Var1 == 2 | Var1 == 7 | Var1 == 10, percent(round(Freq, digits= 4)), "")), vjust = -0.4, hjust = +0.35, size = 4)
+	scale_y_continuous(labels = scales::percent_format()) +
+	scale_x_continuous(limits=c(0,25)) +
+	scale_fill_viridis(discrete = TRUE) +
+	geom_text(aes(label=ifelse(Var1 == 2 | Var1 == 7 | Var1 == 10, percent(round(Freq, digits= 4)), "")), vjust = -0.4, hjust = +0.35, size = 4) +
+	theme_bw() +
+	labs(x = "Days", y = "Retention") +
+	theme(legend.position = "NONE")
 	
 gg
 ```
 
+At this point we should notice that it makes no sense whatsoever to group the users using their `device_id` because we have data only from one day. This way we can not know anything about those users at any other day.
+
+# Step 3
+
+**Please explain how much of the variation in the 2nd day retention can be explained by
+whether or not the user completed the tutorial on the 1st day and whether it is a significant variable
+in understanding 2nd day retention. (You know if someone has complete the tutorial from the funnel
+steps in the user file. We are interested in the variable called funnel_1d and anyone with a funnel
+step higher than 2116 has completed the tutorial). You have to use a logistic regression.**
 
 ```{r}
-table(df$ret)
+df.tutorial <- raw.user[,c("user_id", "funnel_1d")]
+df.tutorial$tut <- ifelse(df.tutorial$funnel_1d < 2116, 1, 0)
+df.tutorial$tut[is.na(df.tutorial$tut)] <- 0
+
+
+pass.tutorial <- df.tutorial[,c(1,3)]
+pass.tutorial$user_id <- as.factor(pass.tutorial$user_id)
+
+ret2f <- df %>% 
+	mutate(ret2 = ifelse(ret == 2, 1, 0)) %>% 
+	group_by(user_id,ret2 )
+
+ret2f$user_id <- as.factor(ret2f$user_id)
+
+ret2 <- ret2f[,c(1,3)] %>% 
+	group_by(user_id) %>% 
+	summarise(ret2=sum(ret2))
+
+tut.ret <- merge(pass.tutorial, ret2)
 ```
+
+Now we have the data ready for a logistic regression.
+
+```{r}
+model <- glm(tut.ret$ret2 ~ tut.ret$tut, family = binomial)
+summary(model)
+```
+
 
