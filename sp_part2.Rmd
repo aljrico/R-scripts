@@ -143,4 +143,4 @@ model <- glm(tut.ret$ret2 ~ tut.ret$tut, family = binomial)
 summary(model)
 ```
 
-
+The results are plainly clear. The variable that indicates whether or not a player was completed the tutorial is relevant to determine the 2nd day retention of that player.
