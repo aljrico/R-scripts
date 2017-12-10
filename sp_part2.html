@@ -129,6 +129,7 @@ $(document).ready(function () {
 <li><a href="#step-1">Step 1</a></li>
 <li><a href="#step-2">Step 2</a></li>
 <li><a href="#step-3">Step 3</a></li>
+<li><a href="#step-4">Step 4:</a></li>
 </ul>
 </div>
 
@@ -343,7 +344,7 @@ gg</code></pre>
 <h2>Step 3</h2>
 <p><strong>Please explain how much of the variation in the 2nd day retention can be explained by whether or not the user completed the tutorial on the 1st day and whether it is a significant variable in understanding 2nd day retention. (You know if someone has complete the tutorial from the funnel steps in the user file. We are interested in the variable called funnel_1d and anyone with a funnel step higher than 2116 has completed the tutorial). You have to use a logistic regression.</strong></p>
 <pre class="r"><code>df.tutorial &lt;- raw.user[,c(&quot;user_id&quot;, &quot;funnel_1d&quot;)]
-df.tutorial$tut &lt;- ifelse(df.tutorial$funnel_1d &lt; 2116, 1, 0)
+df.tutorial$tut &lt;- ifelse(df.tutorial$funnel_1d &gt; 2116, 1, 0)
 df.tutorial$tut[is.na(df.tutorial$tut)] &lt;- 0
 
 
@@ -377,7 +378,7 @@ chisq.test(tb1)</code></pre>
 ##  Pearson's Chi-squared test with Yates' continuity correction
 ## 
 ## data:  tb1
-## X-squared = 1265.9, df = 1, p-value &lt; 2.2e-16</code></pre>
+## X-squared = 2168.5, df = 1, p-value &lt; 2.2e-16</code></pre>
 <p>The result of this test is plainly clear. This result states that these variables are not independent. Thus, we conclude that there is a relationship between having finished the tutorial and the 2nd day retention.</p>
 <p>Now, we can check further the relationship between these variables using a <em>Logistic Regression</em>. The point of using this regression is that is common to predict categorical outcomes using categorical variables. We can perform a Logistic Regression trying to predict whether or not some player have been retented the 2nd day since its regristration and determine if the <code>tutorial</code> variable (which is categorical) is useful for this prediction.</p>
 <pre class="r"><code>model &lt;- glm(tut.ret$ret2 ~ tut.ret$tut, family = binomial)
@@ -388,20 +389,20 @@ summary(model)</code></pre>
 ## 
 ## Deviance Residuals: 
 ##     Min       1Q   Median       3Q      Max  
-## -0.8316  -0.8316  -0.3533  -0.3533   2.3685  
+## -0.9204  -0.9204  -0.3465  -0.3465   2.3844  
 ## 
 ## Coefficients:
 ##              Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)  -0.88413    0.02007  -44.05   &lt;2e-16 ***
-## tut.ret$tut1 -1.85841    0.05789  -32.10   &lt;2e-16 ***
+## (Intercept)  -2.78256    0.04733  -58.79   &lt;2e-16 ***
+## tut.ret$tut1  2.14282    0.05187   41.31   &lt;2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
 ##     Null deviance: 18715  on 17962  degrees of freedom
-## Residual deviance: 17223  on 17961  degrees of freedom
-## AIC: 17227
+## Residual deviance: 16284  on 17961  degrees of freedom
+## AIC: 16288
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
 <p>Considering the pvalue obtained, the variable that indicates whether or not a player was completed the tutorial is relevant to determine the 2nd day retention of that player.</p>
@@ -436,18 +437,370 @@ print(model2)</code></pre>
 ##  
 ##                        Model Likelihood     Discrimination    Rank Discrim.    
 ##                           Ratio Test           Indexes           Indexes       
-##  Obs         17963    LR chi2    1492.62    R2       0.123    C       0.652    
-##   1          14095    d.f.             1    g        0.825    Dxy     0.304    
-##   2           3868    Pr(&gt; chi2) &lt;0.0001    gr       2.281    gamma   0.730    
-##  max |deriv| 2e-08                          gp       0.103    tau-a   0.103    
-##                                             Brier    0.157                     
+##  Obs         17963    LR chi2    2431.10    R2       0.196    C       0.710    
+##   1          14095    d.f.             1    g        1.062    Dxy     0.421    
+##   2           3868    Pr(&gt; chi2) &lt;0.0001    gr       2.892    gamma   0.790    
+##  max |deriv| 3e-08                          gp       0.142    tau-a   0.142    
+##                                             Brier    0.149                     
 ##  
 ##            Coef    S.E.   Wald Z Pr(&gt;|Z|)
-##  Intercept  0.9743 0.0675  14.43 &lt;0.0001 
-##  x         -1.8584 0.0579 -32.10 &lt;0.0001 
+##  Intercept -4.9254 0.0970 -50.77 &lt;0.0001 
+##  x          2.1428 0.0519  41.31 &lt;0.0001 
 ## </code></pre>
-<p>The output of this model leads to a Nagelkerke’s <span class="math inline">\(R^2= 0.123\)</span> which seems pretty low. Could we say that a <span class="math inline">\(12.30\%\)</span> of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude.</p>
+<p>The output of this model leads to a Nagelkerke’s <span class="math inline">\(R^2= 0.196\)</span> which seems pretty low. Could we say that a <span class="math inline">\(12.30\%\)</span> of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude.</p>
 <p>[1]: <a href="https://www.amazon.com/Applied-Logistic-Regression-Probability-Statistics/dp/0471356328"><em>D.W. Hosmer and S. Lemeshow</em> (2000). Applied Logistic Regression</a></p>
+</div>
+<div id="step-4" class="section level2">
+<h2>Step 4:</h2>
+<p><strong>Please identify two other significant variables that we should look at to improve day 2 retention and quantify how mmuch of the variation in retention can be explained by these variables.</strong></p>
+<pre class="r"><code>x &lt;- raw.user[,c(&quot;user_id&quot;, &quot;register_platform&quot;, &quot;register_ip_country&quot;)]
+x$user_id &lt;- as.factor(x$user_id)
+x$register_platform &lt;- as.factor(x$register_platform)
+x$register_ip_country &lt;- as.factor(x$register_ip_country)
+
+df &lt;- merge(tut.ret, x, by = &quot;user_id&quot;, all.x = TRUE)
+
+# Clean duplicates
+df &lt;- df[!duplicated(df),]
+
+# Perform Logistic Regression
+rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret, ret2, ret2f, tut.ret, x, a, tb1, y ,z)</code></pre>
+<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
+## ret2, : object 'g' not found</code></pre>
+<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
+## ret2, : object 'a' not found</code></pre>
+<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
+## ret2, : object 'z' not found</code></pre>
+<pre class="r"><code>model &lt;- glm(df$ret2 ~ df$register_platform + df$register_ip_country + df$tut, family = binomial)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = df$ret2 ~ df$register_platform + df$register_ip_country + 
+##     df$tut, family = binomial)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.5293  -0.8755  -0.3869  -0.2330   2.7352  
+## 
+## Coefficients:
+##                            Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)               -15.99886  309.97814  -0.052 0.958837    
+## df$register_platformios     2.14005    0.55355   3.866 0.000111 ***
+## df$register_ip_countryAE   13.84667  309.97857   0.045 0.964371    
+## df$register_ip_countryAF   11.43456  309.97987   0.037 0.970574    
+## df$register_ip_countryAG   14.53708  309.97906   0.047 0.962595    
+## df$register_ip_countryAL   13.87405  309.97823   0.045 0.964300    
+## df$register_ip_countryAM   -0.41799  739.80827  -0.001 0.999549    
+## df$register_ip_countryAR   13.25995  309.97868   0.043 0.965879    
+## df$register_ip_countryAT   14.48836  309.98120   0.047 0.962721    
+## df$register_ip_countryAU   13.62164  309.97875   0.044 0.964949    
+## df$register_ip_countryAZ    0.43279  631.41418   0.001 0.999453    
+## df$register_ip_countryBB   14.04729  309.97825   0.045 0.963855    
+## df$register_ip_countryBD   13.67309  309.97890   0.044 0.964817    
+## df$register_ip_countryBE   14.13897  309.97892   0.046 0.963619    
+## df$register_ip_countryBG   13.00400  309.97868   0.042 0.966538    
+## df$register_ip_countryBH    0.43279  895.62665   0.000 0.999614    
+## df$register_ip_countryBJ   15.99886  309.98136   0.052 0.958838    
+## df$register_ip_countryBM    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryBN   13.71019  309.97822   0.044 0.964721    
+## df$register_ip_countryBO    0.43279  790.96899   0.001 0.999563    
+## df$register_ip_countryBR   12.67381  309.97836   0.041 0.967387    
+## df$register_ip_countryBS    0.43279 1074.79181   0.000 0.999679    
+## df$register_ip_countryBT    0.43279 1074.79181   0.000 0.999679    
+## df$register_ip_countryBY   13.44329  309.97872   0.043 0.965408    
+## df$register_ip_countryBZ   29.48655 1488.04181   0.020 0.984190    
+## df$register_ip_countryCA   13.51701  309.97837   0.044 0.965218    
+## df$register_ip_countryCD   14.20753  309.98077   0.046 0.963443    
+## df$register_ip_countryCG    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryCL   -0.59856  627.21580  -0.001 0.999239    
+## df$register_ip_countryCM   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryCN   12.70324  309.97820   0.041 0.967311    
+## df$register_ip_countryCO   13.20029  309.97845   0.043 0.966033    
+## df$register_ip_countryCR   13.00400  309.98029   0.042 0.966538    
+## df$register_ip_countryCU    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryCW   13.44662  309.97854   0.043 0.965399    
+## df$register_ip_countryCY   29.48655 1488.04181   0.020 0.984190    
+## df$register_ip_countryCZ   13.84361  309.98039   0.045 0.964379    
+## df$register_ip_countryDE   13.06797  309.97856   0.042 0.966373    
+## df$register_ip_countryDJ   12.53419  309.98016   0.040 0.967746    
+## df$register_ip_countryDK   29.48655 1488.04181   0.020 0.984190    
+## df$register_ip_countryDM   13.00400  309.98029   0.042 0.966538    
+## df$register_ip_countryDO   14.00424  309.97894   0.045 0.963965    
+## df$register_ip_countryDZ   14.02328  309.97887   0.045 0.963916    
+## df$register_ip_countryEC   12.63469  309.98013   0.041 0.967487    
+## df$register_ip_countryEG   13.10566  309.97824   0.042 0.966276    
+## df$register_ip_countryES   12.28210  309.97818   0.040 0.968394    
+## df$register_ip_countryET   14.61257  309.98015   0.047 0.962401    
+## df$register_ip_countryFI   -0.90472  996.75826  -0.001 0.999276    
+## df$register_ip_countryFR   13.15889  309.97836   0.042 0.966139    
+## df$register_ip_countryGB   13.40673  309.97828   0.043 0.965502    
+## df$register_ip_countryGD   14.95967  309.98023   0.048 0.961509    
+## df$register_ip_countryGE   13.60307  309.97829   0.044 0.964997    
+## df$register_ip_countryGF   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryGG   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryGH    0.43279  895.62666   0.000 0.999614    
+## df$register_ip_countryGL   -0.90472  996.75826  -0.001 0.999276    
+## df$register_ip_countryGP   13.25520  309.97929   0.043 0.965892    
+## df$register_ip_countryGQ   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryGR   12.81684  309.97821   0.041 0.967019    
+## df$register_ip_countryGT   -0.46977  509.35607  -0.001 0.999264    
+## df$register_ip_countryGY   13.21347  309.97926   0.043 0.965999    
+## df$register_ip_countryHK   12.80403  309.97815   0.041 0.967052    
+## df$register_ip_countryHN    0.43279 1074.79181   0.000 0.999679    
+## df$register_ip_countryHR   14.33451  309.97954   0.046 0.963116    
+## df$register_ip_countryHU   -0.90472  738.11025  -0.001 0.999022    
+## df$register_ip_countryID   13.14588  309.97820   0.042 0.966173    
+## df$register_ip_countryIE    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryIL   13.76399  309.97880   0.044 0.964583    
+## df$register_ip_countryIN   12.82673  309.97818   0.041 0.966993    
+## df$register_ip_countryIQ   13.28417  309.97815   0.043 0.965817    
+## df$register_ip_countryIT   13.40225  309.97869   0.043 0.965513    
+## df$register_ip_countryJM   -0.20604  636.34645   0.000 0.999742    
+## df$register_ip_countryJO   12.75624  309.97843   0.041 0.967175    
+## df$register_ip_countryJP   13.44415  309.97814   0.043 0.965406    
+## df$register_ip_countryKE   -0.90472  996.75826  -0.001 0.999276    
+## df$register_ip_countryKG   -1.16969  845.80338  -0.001 0.998897    
+## df$register_ip_countryKH   14.71796  309.97864   0.047 0.962130    
+## df$register_ip_countryKN   13.87509  309.97945   0.045 0.964298    
+## df$register_ip_countryKR   12.76158  309.97863   0.041 0.967161    
+## df$register_ip_countryKW   13.21347  309.97926   0.043 0.965999    
+## df$register_ip_countryKY   14.08591  309.97883   0.045 0.963755    
+## df$register_ip_countryKZ   13.38789  309.97894   0.043 0.965550    
+## df$register_ip_countryLA   13.65604  309.97946   0.044 0.964861    
+## df$register_ip_countryLB   14.37871  309.97862   0.046 0.963002    
+## df$register_ip_countryLC   14.37523  309.98004   0.046 0.963012    
+## df$register_ip_countryLK   13.36899  309.98039   0.043 0.965599    
+## df$register_ip_countryLR    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryLT   13.22734  309.98056   0.043 0.965963    
+## df$register_ip_countryLU   -0.90472  996.75826  -0.001 0.999276    
+## df$register_ip_countryLY   12.69198  309.97882   0.041 0.967340    
+## df$register_ip_countryMA   13.35234  309.97885   0.043 0.965642    
+## df$register_ip_countryMD   -0.59856  627.21580  -0.001 0.999239    
+## df$register_ip_countryME   12.79919  309.97866   0.041 0.967064    
+## df$register_ip_countryMF   11.97690  309.97995   0.039 0.969179    
+## df$register_ip_countryMK   14.95967  309.98232   0.048 0.961509    
+## df$register_ip_countryMM   12.98565  309.97818   0.042 0.966585    
+## df$register_ip_countryMN   13.13134  309.97846   0.042 0.966210    
+## df$register_ip_countryMO   13.00391  309.97827   0.042 0.966538    
+## df$register_ip_countryMQ   14.61363  309.98056   0.047 0.962399    
+## df$register_ip_countryMR   15.30571  309.98056   0.049 0.960619    
+## df$register_ip_countryMU   13.58805  309.98067   0.044 0.965036    
+## df$register_ip_countryMV   14.30438  309.97922   0.046 0.963194    
+## df$register_ip_countryMW   31.56493 1488.04181   0.021 0.983076    
+## df$register_ip_countryMX   13.42351  309.97816   0.043 0.965459    
+## df$register_ip_countryMY   13.32309  309.97826   0.043 0.965717    
+## df$register_ip_countryMZ    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryNG   13.65091  309.97919   0.044 0.964874    
+## df$register_ip_countryNI    0.43279  895.62666   0.000 0.999614    
+## df$register_ip_countryNL   13.03657  309.97923   0.042 0.966454    
+## df$register_ip_countryNP   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryNZ    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryOM   13.39837  309.97938   0.043 0.965523    
+## df$register_ip_countryPA   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryPE   12.63469  309.98013   0.041 0.967487    
+## df$register_ip_countryPF   -0.41799  739.80827  -0.001 0.999549    
+## df$register_ip_countryPH   13.15918  309.97820   0.042 0.966138    
+## df$register_ip_countryPK   13.15305  309.97827   0.042 0.966154    
+## df$register_ip_countryPL   13.65319  309.97931   0.044 0.964868    
+## df$register_ip_countryPR   -0.59856  831.09138  -0.001 0.999425    
+## df$register_ip_countryPS   12.79767  309.97832   0.041 0.967068    
+## df$register_ip_countryPT   12.69516  309.98007   0.041 0.967332    
+## df$register_ip_countryPY   14.48836  309.98120   0.047 0.962721    
+## df$register_ip_countryQA   14.09909  309.97939   0.045 0.963722    
+## df$register_ip_countryRE   -0.90472  996.75826  -0.001 0.999276    
+## df$register_ip_countryRO   12.99356  309.97849   0.042 0.966564    
+## df$register_ip_countryRS   12.94114  309.97827   0.042 0.966699    
+## df$register_ip_countryRU   12.86585  309.97824   0.042 0.966893    
+## df$register_ip_countrySA   12.72960  309.97828   0.041 0.967243    
+## df$register_ip_countrySC    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countrySD   13.30888  309.97815   0.043 0.965753    
+## df$register_ip_countrySE   14.95967  309.98232   0.048 0.961509    
+## df$register_ip_countrySG   13.61509  309.97863   0.044 0.964966    
+## df$register_ip_countrySK    0.43279 1074.79181   0.000 0.999679    
+## df$register_ip_countrySO    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countrySR   13.35748  309.97831   0.043 0.965628    
+## df$register_ip_countrySV   13.20146  309.98024   0.043 0.966030    
+## df$register_ip_countrySX   -0.90472  628.67584  -0.001 0.998852    
+## df$register_ip_countrySY   13.19241  309.97816   0.043 0.966053    
+## df$register_ip_countryTC    0.43279 1488.04181   0.000 0.999768    
+## df$register_ip_countryTH   12.40550  309.97829   0.040 0.968077    
+## df$register_ip_countryTN   -0.23315  452.38422  -0.001 0.999589    
+## df$register_ip_countryTR   12.93479  309.97823   0.042 0.966715    
+## df$register_ip_countryTT   15.17710  309.97972   0.049 0.960950    
+## df$register_ip_countryTW   12.36743  309.97818   0.040 0.968175    
+## df$register_ip_countryTZ   29.48655 1488.04181   0.020 0.984190    
+## df$register_ip_countryUA   13.53786  309.97834   0.044 0.965165    
+## df$register_ip_countryUG    0.43279 1074.79181   0.000 0.999679    
+## df$register_ip_countryUS   13.69892  309.97818   0.044 0.964750    
+## df$register_ip_countryUY   13.58805  309.97940   0.044 0.965036    
+## df$register_ip_countryUZ   -1.64558 1488.04181  -0.001 0.999118    
+## df$register_ip_countryVC   14.37523  309.97877   0.046 0.963011    
+## df$register_ip_countryVE   12.72235  309.98020   0.041 0.967262    
+## df$register_ip_countryVN   12.56580  309.97825   0.041 0.967664    
+## df$register_ip_countryYE   13.36899  309.98039   0.043 0.965599    
+## df$register_ip_countryZA   13.95983  309.97871   0.045 0.964080    
+## df$tut1                     2.07838    0.05361  38.769  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 18681  on 17946  degrees of freedom
+## Residual deviance: 15890  on 17791  degrees of freedom
+## AIC: 16202
+## 
+## Number of Fisher Scoring iterations: 14</code></pre>
+<p>We just keep those variables that are useful and move on.</p>
+<pre class="r"><code>imp.var &lt;- df[,-c(&quot;register_ip_country&quot;)]</code></pre>
+<pre class="r"><code>model &lt;- glm(df$ret2 ~ df$register_platform + df$tut, family = binomial)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = df$ret2 ~ df$register_platform + df$tut, family = binomial)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.4278  -0.9190  -0.3467  -0.3467   2.3840  
+## 
+## Coefficients:
+##                         Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)             -2.78174    0.04729 -58.822   &lt;2e-16 ***
+## df$register_platformios  1.21522    0.52963   2.294   0.0218 *  
+## df$tut1                  2.13826    0.05184  41.247   &lt;2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 18681  on 17946  degrees of freedom
+## Residual deviance: 16254  on 17944  degrees of freedom
+## AIC: 16260
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<p>Whereas the <code>tutorial</code> variable relevance is out of doubt, this variable concerning the platform in which the game has been installed is relevant just by the standard metrics (pvalue below <span class="math inline">\(0.05\)</span>).</p>
+<p>Let’s finde some other useful variables.</p>
+<pre class="r"><code>x &lt;- raw.user[,c(&quot;user_id&quot;, &quot;date_register&quot;)]
+x$user_id &lt;- as.factor(x$user_id)
+x$date_register &lt;- date(x$date_register)
+x$month_register &lt;- as.factor(month(x$date_register))
+x$year_register &lt;- as.factor(year(x$date_register))
+x$wday_register &lt;- as.factor(weekdays(x$date_register))
+
+df &lt;- merge(imp.var, x)
+
+# Clean duplicates and NA
+df &lt;- df[!duplicated(df),]
+df &lt;- na.omit(df)
+
+model &lt;- glm(df$ret2 ~ df$tut + df$register_platform + df$month_register + df$year_register + df$wday_register, family=binomial)
+
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = df$ret2 ~ df$tut + df$register_platform + df$month_register + 
+##     df$year_register + df$wday_register, family = binomial)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.4989  -0.8615  -0.3494  -0.3188   3.4657  
+## 
+## Coefficients: (1 not defined because of singularities)
+##                            Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)               -16.09727  438.51811  -0.037 0.970718    
+## df$tut1                     2.13347    0.05232  40.779  &lt; 2e-16 ***
+## df$register_platformios     1.36210    0.53421   2.550 0.010780 *  
+## df$month_register2         -1.89424  857.39336  -0.002 0.998237    
+## df$month_register3         13.33169  438.51811   0.030 0.975747    
+## df$month_register4         13.38732  438.51810   0.031 0.975646    
+## df$month_register5         13.52230  438.51810   0.031 0.975400    
+## df$month_register6         13.79397  438.51812   0.031 0.974906    
+## df$month_register11        10.31775  438.51926   0.024 0.981229    
+## df$month_register12        12.86036  438.51831   0.029 0.976604    
+## df$year_register2015             NA         NA      NA       NA    
+## df$wday_registerMonday     -0.29402    0.07486  -3.928 8.58e-05 ***
+## df$wday_registerSaturday   -0.06736    0.06823  -0.987 0.323502    
+## df$wday_registerSunday      0.03446    0.07294   0.472 0.636635    
+## df$wday_registerThursday   -0.10327    0.07287  -1.417 0.156396    
+## df$wday_registerTuesday    -0.24395    0.06570  -3.713 0.000205 ***
+## df$wday_registerWednesday  -0.22367    0.06497  -3.443 0.000576 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 18645  on 17924  degrees of freedom
+## Residual deviance: 16118  on 17909  degrees of freedom
+## AIC: 16150
+## 
+## Number of Fisher Scoring iterations: 14</code></pre>
+<p>Turns out that the <code>month</code> and the <code>year</code> in which a user has been registrated is of no importance in order to predict the 2nd day retention. What it is interesting is the great importance of the day of the week in which the registration was maded. Let’s isolate a bit the non-relevant variables and see with more detail what happens to this <code>weekday</code> variable.</p>
+<pre class="r"><code>df &lt;- df[,-c(&quot;month_register&quot;, &quot;year_register&quot;)]</code></pre>
+<pre class="r"><code>model &lt;- glm(df$ret2 ~ df$tut + df$register_platform + df$wday_register, family=binomial)
+
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = df$ret2 ~ df$tut + df$register_platform + df$wday_register, 
+##     family = binomial)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.5064  -0.8685  -0.3603  -0.3257   2.4343  
+## 
+## Coefficients:
+##                           Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)               -2.61803    0.05984 -43.747  &lt; 2e-16 ***
+## df$tut1                    2.11642    0.05208  40.638  &lt; 2e-16 ***
+## df$register_platformios    1.24834    0.52818   2.363   0.0181 *  
+## df$wday_registerMonday    -0.29189    0.07465  -3.910 9.22e-05 ***
+## df$wday_registerSaturday  -0.08396    0.06737  -1.246   0.2127    
+## df$wday_registerSunday     0.02846    0.07206   0.395   0.6929    
+## df$wday_registerThursday  -0.17840    0.06959  -2.564   0.0104 *  
+## df$wday_registerTuesday   -0.27896    0.06397  -4.360 1.30e-05 ***
+## df$wday_registerWednesday -0.27913    0.06167  -4.526 6.01e-06 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 18645  on 17924  degrees of freedom
+## Residual deviance: 16177  on 17916  degrees of freedom
+## AIC: 16195
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<p>Interesting enough, not all days are equally important. But some of them are undoubtedly relevant.</p>
+<p>In order to measure the pseudeo-R squared as we did before, we need to create dummy variables out of our actual variables.</p>
+<pre class="r"><code>library(dummies)</code></pre>
+<pre><code>## dummies-1.5.6 provided by Decision Patterns</code></pre>
+<pre class="r"><code>dum.df &lt;- df[,c(&quot;user_id&quot;, &quot;tut&quot;, &quot;ret2&quot;)]
+
+dum.df &lt;- cbind(dum.df, dummy(df$register_platform, sep=&quot;_&quot;))
+
+dum.df &lt;- cbind(dum.df, dummy(df$wday_register, sep=&quot;_&quot;))</code></pre>
+<p>And simply perform the logistic regression again</p>
+<pre class="r"><code>test &lt;- dum.df[,-c(&quot;user_id&quot;)]
+test$tut &lt;- as.numeric(as.character(test$tut))
+
+colnames(test) &lt;- c(&quot;tut&quot;, &quot;ret2&quot;, &quot;android&quot;, &quot;ios&quot;, &quot;friday&quot;, &quot;monday&quot;, &quot;saturday&quot;, &quot;sunday&quot;, &quot;thursday&quot;, &quot;tuesday&quot;, &quot;wednesday&quot;) 
+
+modeltut &lt;- lrm(formula = test$ret2 ~ test$tut)
+modelwed &lt;- lrm(formula = test$ret2 ~ test$wednesday)
+modelmon &lt;- lrm(formula = test$ret2 ~ test$monday)
+modeltue &lt;- lrm(formula = test$ret2 ~ test$tuesday)
+
+modeltut$stats[10]</code></pre>
+<pre><code>##        R2 
+## 0.1952651</code></pre>
+<pre class="r"><code>modelwed$stats[10]</code></pre>
+<pre><code>##          R2 
+## 0.002457038</code></pre>
+<pre class="r"><code>modelmon$stats[10]</code></pre>
+<pre><code>##          R2 
+## 0.001381453</code></pre>
+<pre class="r"><code>modeltue$stats[10]</code></pre>
+<pre><code>##          R2 
+## 0.001280012</code></pre>
+<p>Despite that the statistical tests stated that these are relevant variables, we can notice how small their pseudo-<span class="math inline">\(R^2\)</span> are, compared to our first variable.</p>
 </div>
 
 

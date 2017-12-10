@@ -186,7 +186,7 @@ model2 <- lrm(y ~ x)
 print(model2)
 ```
 
-The output of this model leads to a Nagelkerke's $R^2= 0.123$ which seems pretty low. Could we say that a $12.30\%$ of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude. 
+The output of this model leads to a Nagelkerke's $R^2= 0.196$ which seems pretty low. Could we say that a $12.30\%$ of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude. 
 
 [1]: [*D.W. Hosmer and S. Lemeshow* (2000). Applied Logistic Regression](https://www.amazon.com/Applied-Logistic-Regression-Probability-Statistics/dp/0471356328)
 
@@ -256,7 +256,39 @@ model <- glm(df$ret2 ~ df$tut + df$register_platform + df$wday_register, family=
 
 summary(model)
 ```
-Interesting enough, not all days are equally important. But all in all, I would rather say that this is a *relevant* variable. 
+Interesting enough, not all days are equally important. But some of them are undoubtedly relevant.
 
+In order to measure the pseudeo-R squared as we did before, we need to create dummy variables out of our actual variables.
+
+```{r}
+library(dummies)
+dum.df <- df[,c("user_id", "tut", "ret2")]
+
+dum.df <- cbind(dum.df, dummy(df$register_platform, sep="_"))
+
+dum.df <- cbind(dum.df, dummy(df$wday_register, sep="_"))
+```
+
+And simply perform the logistic regression again
+
+```{r}
+test <- dum.df[,-c("user_id")]
+test$tut <- as.numeric(as.character(test$tut))
+
+colnames(test) <- c("tut", "ret2", "android", "ios", "friday", "monday", "saturday", "sunday", "thursday", "tuesday", "wednesday") 
+
+modeltut <- lrm(formula = test$ret2 ~ test$tut)
+modelwed <- lrm(formula = test$ret2 ~ test$wednesday)
+modelmon <- lrm(formula = test$ret2 ~ test$monday)
+modeltue <- lrm(formula = test$ret2 ~ test$tuesday)
+
+modeltut$stats[10]
+modelwed$stats[10]
+modelmon$stats[10]
+modeltue$stats[10]
+
+```
+
+Despite that the statistical tests stated that these are relevant variables, we can notice how small their pseudo-$R^2$ are, compared to our first variable.
 
 
