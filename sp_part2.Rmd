@@ -3,12 +3,14 @@ title: "SP Test"
 author: "Alejandro Jiménez Rico"
 subtitle: Part 2
 output:
-  html_document:
+  prettydoc::html_pretty:
     df_print: paged
     toc: yes
+    theme: cayman
+    highlight: vignette
   html_notebook:
-    highlight: pygments
-    theme: spacelab
+    highlight: github
+    theme: lumen
     toc: yes
   pdf_document:
     toc: yes
@@ -17,6 +19,8 @@ output:
 ## Step 1
 
 **Please calculate the 2nd day, 7th day and 10th day retention (which is the percentage of people that downloaded the game on day 1 who played again on day 2, 7 and 10). Please calculate the retention in two ways, using the user id (user_id) and then the device id (client_mobile_device_aid). (Please note that you only have the device id from the 14th of April).**
+
+The first thing to do is to gather the data and organise it.
 
 ```{r message = FALSE}
 library(data.table)
@@ -32,6 +36,8 @@ raw.user <- fread('data/sh_user.csv')
 raw.session <- fread('data/sh_session.csv')
 raw.battles <- fread('data/sh_battles.csv')
 ```
+
+Taking a brief look at the data.
 
 ```{r}
 glimpse(raw.user)
