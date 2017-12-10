@@ -1,9 +1,20 @@
 ---
-title: "SP test - Part 2"
-output: html_notebook
+title: "SP Test"
+author: "Alejandro Jiménez Rico"
+subtitle: Part 2
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    highlight: pygments
+    theme: spacelab
+    toc: yes
+  pdf_document:
+    toc: yes
 ---
 
-# Step 1
+## Step 1
 
 **Please calculate the 2nd day, 7th day and 10th day retention (which is the percentage of people that downloaded the game on day 1 who played again on day 2, 7 and 10). Please calculate the retention in two ways, using the user id (user_id) and then the device id (client_mobile_device_aid). (Please note that you only have the device id from the 14th of April).**
 
@@ -91,12 +102,12 @@ ret$Freq <- as.numeric(ret$Freq/sum(ret$Freq))
 ret$Var1 <- as.numeric(ret$Var1)
 ret$colour <- ifelse(ret$Var1 == 2 | ret$Var1 == 7 | ret$Var1 == 10, "yellow", "blue")
 
-gg <- ggplot(ret,  aes(x=Var1, y=Freq, fill=colour)) +
+gg <- ggplot(ret,  aes(x=order(Var1), y=Freq, fill=colour)) +
 	geom_bar(stat="identity") +
 	scale_y_continuous(labels = scales::percent_format()) +
 	scale_x_continuous(limits=c(0,25)) +
 	scale_fill_viridis(discrete = TRUE) +
-	geom_text(aes(label=ifelse(Var1 == 2 | Var1 == 7 | Var1 == 10, percent(round(Freq, digits= 4)), "")), vjust = -0.4, hjust = +0.35, size = 4) +
+	geom_text(aes(label=ifelse(Var1 == 2 | Var1 == 7 | Var1 == 10, percent(round(Freq, digits= 4)), "")), vjust = -0.15, hjust = +0.18, size = 5, position = position_dodge(width = 0)) +
 	theme_bw() +
 	labs(x = "Days", y = "Retention") +
 	theme(legend.position = "NONE")
@@ -104,9 +115,13 @@ gg <- ggplot(ret,  aes(x=Var1, y=Freq, fill=colour)) +
 gg
 ```
 
-At this point we should notice that it makes no sense whatsoever to group the users using their `device_id` because we have data only from one day. This way we can not know anything about those users at any other day.
+## Step 2
 
-# Step 3
+**Please explain if the results are the same using the two different ids and if not why not.**
+
+I am not entirely confident if I correctly unerstood the question. But at this point we should notice that it makes no sense whatsoever to group the users using their `device_id` because we have data only from one day. This implies that we can not know anything about those users at any other day.
+
+## Step 3
 
 **Please explain how much of the variation in the 2nd day retention can be explained by
 whether or not the user completed the tutorial on the 1st day and whether it is a significant variable
@@ -116,7 +131,7 @@ step higher than 2116 has completed the tutorial). You have to use a logistic re
 
 ```{r}
 df.tutorial <- raw.user[,c("user_id", "funnel_1d")]
-df.tutorial$tut <- ifelse(df.tutorial$funnel_1d < 2116, 1, 0)
+df.tutorial$tut <- ifelse(df.tutorial$funnel_1d > 2116, 1, 0)
 df.tutorial$tut[is.na(df.tutorial$tut)] <- 0
 
 
@@ -134,13 +149,114 @@ ret2 <- ret2f[,c(1,3)] %>%
 	summarise(ret2=sum(ret2))
 
 tut.ret <- merge(pass.tutorial, ret2)
+tut.ret$tut <- as.factor(tut.ret$tut)
+tut.ret$ret2 <- as.factor(tut.ret$ret2)
 ```
 
-Now we have the data ready for a logistic regression.
+Now we have the data ready for testing and doing regressions.
+
+The first question to be answered now is whether or not these two variables we are considering are correlated. Our variables are cathegorical. This means that they do not express a magnitude by a factor that labels a category. Two cathegorical variables can be correlated in the same sense as two numerical variables; but the statistical test performed for each case is quite different. To measure the dependence between cathegorical variables there is a widely used test, named *Chi-Squared Test*. Using this test, we can decide whether or not two cathegorical variables are correlated.
+
+```{r}
+library(MASS)
+tb1 <- table(tut.ret$tut, tut.ret$ret2)
+chisq.test(tb1)
+```
+The result of this test is plainly clear. This result states that these variables are not independent. Thus, we conclude that there is a relationship between having finished the tutorial and the 2nd day retention.
+
+Now, we can check further the relationship between these variables using a *Logistic Regression*. The point of using this regression is that is common to predict categorical outcomes using categorical variables. We can perform a Logistic Regression trying to predict whether or not some player have been retented the 2nd day since its regristration and determine if the `tutorial` variable (which is categorical) is useful for this prediction.
 
 ```{r}
 model <- glm(tut.ret$ret2 ~ tut.ret$tut, family = binomial)
 summary(model)
 ```
 
-The results are plainly clear. The variable that indicates whether or not a player was completed the tutorial is relevant to determine the 2nd day retention of that player.
+Considering the pvalue obtained, the variable that indicates whether or not a player was completed the tutorial is relevant to determine the 2nd day retention of that player.
+
+Now that we know that the variable *is* relevant, we could ask *how much* relevant it is. Or, in other words, how 
+much variation of the prediction on the 2nd day retention is caused by this variable. In Logistic Regression, technically we can not talk about any measure of *How much variation can be explained by this variable*. If we were talking about linear regression we could simply compute the $R^2$ and interpret its result as the percentage of the variation that could be explained with the variable; but there is no such thing in Logistic Regression. Notwithstanding, there are some so-called pseudo-$R^2$ as `Cos & Snell` and `Nagelkerke`.
+
+Now we are going to apply the latter, since it is an adjustment of the former.
+
+```{r}
+library(rms)
+x <- as.numeric(tut.ret$tut)
+y <- as.numeric(tut.ret$ret2)
+model2 <- lrm(y ~ x)
+print(model2)
+```
+
+The output of this model leads to a Nagelkerke's $R^2= 0.123$ which seems pretty low. Could we say that a $12.30\%$ of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude. 
+
+[1]: [*D.W. Hosmer and S. Lemeshow* (2000). Applied Logistic Regression](https://www.amazon.com/Applied-Logistic-Regression-Probability-Statistics/dp/0471356328)
+
+## Step 4:
+
+**Please identify two other significant variables that we should look at to improve day 2 retention and quantify how mmuch of the variation in retention can be explained by these variables.**
+
+```{r}
+
+x <- raw.user[,c("user_id", "register_platform", "register_ip_country")]
+x$user_id <- as.factor(x$user_id)
+x$register_platform <- as.factor(x$register_platform)
+x$register_ip_country <- as.factor(x$register_ip_country)
+
+df <- merge(tut.ret, x, by = "user_id", all.x = TRUE)
+
+# Clean duplicates
+df <- df[!duplicated(df),]
+
+# Perform Logistic Regression
+rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret, ret2, ret2f, tut.ret, x, a, tb1, y ,z)
+model <- glm(df$ret2 ~ df$register_platform + df$register_ip_country + df$tut, family = binomial)
+summary(model)
+```
+
+We just keep those variables that are useful and move on.
+
+```{r}
+imp.var <- df[,-c("register_ip_country")]
+```
+
+```{r}
+model <- glm(df$ret2 ~ df$register_platform + df$tut, family = binomial)
+summary(model)
+```
+Whereas the `tutorial` variable relevance is out of doubt, this variable concerning the platform in which the game has been installed is relevant just by the standard metrics (pvalue below $0.05$).
+
+Let's finde some other useful variables.
+
+```{r}
+x <- raw.user[,c("user_id", "date_register")]
+x$user_id <- as.factor(x$user_id)
+x$date_register <- date(x$date_register)
+x$month_register <- as.factor(month(x$date_register))
+x$year_register <- as.factor(year(x$date_register))
+x$wday_register <- as.factor(weekdays(x$date_register))
+
+df <- merge(imp.var, x)
+
+# Clean duplicates and NA
+df <- df[!duplicated(df),]
+df <- na.omit(df)
+
+model <- glm(df$ret2 ~ df$tut + df$register_platform + df$month_register + df$year_register + df$wday_register, family=binomial)
+
+summary(model)
+```
+
+Turns out that the `month` and the `year` in which a user has been registrated is of no importance in order to predict the 2nd day retention. What it is interesting is the great importance of the day of the week in which the registration was maded. Let's isolate a bit the non-relevant variables and see with more detail what happens to this `weekday` variable.
+
+```{r}
+df <- df[,-c("month_register", "year_register")]
+```
+
+```{r}
+model <- glm(df$ret2 ~ df$tut + df$register_platform + df$wday_register, family=binomial)
+
+summary(model)
+```
+Interesting enough, not all days are equally important. But all in all, I would rather say that this is a *relevant* variable. 
+
+
+
