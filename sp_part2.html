@@ -89,6 +89,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="step-1" class="section level2">
 <h2>Step 1</h2>
 <p><strong>Please calculate the 2nd day, 7th day and 10th day retention (which is the percentage of people that downloaded the game on day 1 who played again on day 2, 7 and 10). Please calculate the retention in two ways, using the user id (user_id) and then the device id (client_mobile_device_aid). (Please note that you only have the device id from the 14th of April).</strong></p>
+<p>The first thing to do is to gather the data and organise it in data frames.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(data.table)
 <span class="kw">library</span>(tidyverse)
 <span class="kw">library</span>(lubridate)
@@ -101,6 +102,7 @@ percent &lt;-<span class="st"> </span><span class="cf">function</span>(x, <span 
 raw.user &lt;-<span class="st"> </span><span class="kw">fread</span>(<span class="st">'data/sh_user.csv'</span>)
 raw.session &lt;-<span class="st"> </span><span class="kw">fread</span>(<span class="st">'data/sh_session.csv'</span>)
 raw.battles &lt;-<span class="st"> </span><span class="kw">fread</span>(<span class="st">'data/sh_battles.csv'</span>)</code></pre></div>
+<p>Taking a brief look at the data.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">glimpse</span>(raw.user)</code></pre></div>
 <pre><code>## Observations: 17,988
 ## Variables: 54
@@ -216,9 +218,9 @@ raw.battles &lt;-<span class="st"> </span><span class="kw">fread</span>(<span cl
 ## $ single_player_status_type    &lt;chr&gt; &quot;pve&quot;, &quot;pve&quot;, &quot;pve&quot;, &quot;pve&quot;, &quot;pve&quot;...
 ## $ user_id                      &lt;dbl&gt; 2.000000e+00, 1.940917e+14, 6.785...
 ## $ version                      &lt;chr&gt; &quot;9999999999&quot;, &quot;1504131647&quot;, &quot;1504...</code></pre>
-<p>Let’s get the date of registration of every user</p>
+<p>In order to measure the retention for each user, we have to compare the days each player has played with its registration day, so the first information we need to get clear is date of registration of every user.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df.registration &lt;-<span class="st"> </span>raw.user[,<span class="kw">c</span>(<span class="st">&quot;user_id&quot;</span>, <span class="st">&quot;date_register&quot;</span>)]</code></pre></div>
-<p>We should check for duplicates</p>
+<p>For many different reasons, it could happen that a user registrates more than once. So we should check for duplicates.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">length</span>(df.registration<span class="op">$</span>user_id) <span class="op">-</span><span class="st"> </span><span class="kw">length</span>(<span class="kw">unique</span>(df.registration<span class="op">$</span>user_id))</code></pre></div>
 <pre><code>## [1] 63</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df &lt;-<span class="st"> </span>df.registration <span class="op">%&gt;%</span><span class="st"> </span>
@@ -227,7 +229,7 @@ raw.battles &lt;-<span class="st"> </span><span class="kw">fread</span>(<span cl
 
 <span class="kw">unique</span>(df<span class="op">$</span>N)</code></pre></div>
 <pre><code>## [1] 1 2</code></pre>
-<p>There are 63 people who has been registered twice.</p>
+<p>There are 63 people who has been registered twice. Since we do not know how the databases are constructed, we need to learn a bit of these duplicates in order to make decisions properly.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">users.twice &lt;-<span class="st"> </span>df[df[,<span class="dv">2</span>] <span class="op">==</span><span class="st"> </span><span class="dv">2</span>,<span class="dv">1</span>]
 double.registration &lt;-<span class="st"> </span>df.registration[df.registration<span class="op">$</span>user_id <span class="op">%in%</span><span class="st"> </span><span class="kw">as.array</span>(users.twice<span class="op">$</span>user_id)]
 
@@ -237,9 +239,10 @@ double.registration &lt;-<span class="st"> </span>double.registration <span clas
     
 <span class="kw">unique</span>(double.registration<span class="op">$</span>unique)</code></pre></div>
 <pre><code>## [1] 1</code></pre>
-<p>But those who registered twice, did it both times on the same day. So we can discard duplicated registration records and move on.</p>
+<p>We can see that those users who registered twice, did it both times on the same day. So we can discard duplicated registration records and move on, because we have double information about the same date.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">reg &lt;-<span class="st"> </span>df.registration[<span class="op">!</span><span class="kw">duplicated</span>(df.registration[,<span class="st">'user_id'</span>]),]
 <span class="kw">rm</span>(df,df.registration,double.registration,users.twice)</code></pre></div>
+<p>Once we have this data gathered, we need to format it properly in order to perform the exploratory analysis.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">con &lt;-<span class="st"> </span>raw.session[,<span class="kw">c</span>(<span class="st">&quot;user_id&quot;</span>, <span class="st">&quot;datetime&quot;</span>)]
 
 df &lt;-<span class="st"> </span><span class="kw">merge</span>(reg,con)
@@ -252,7 +255,7 @@ df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="s
 <span class="st">    </span><span class="kw">mutate</span>(<span class="dt">ret =</span> <span class="kw">as.numeric</span>(ret))
 df &lt;-<span class="st"> </span>df[,<span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">4</span>)]
 df &lt;-<span class="st"> </span>df[<span class="op">!</span><span class="kw">duplicated</span>(df[,<span class="kw">c</span>(<span class="st">'user_id'</span>,<span class="st">'ret'</span>)]),]</code></pre></div>
-<p>Now we just plot the results</p>
+<p>Now we just plot the information and highlight <em>2nd</em>, <em>7th</em> and <em>10th</em> day retention.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(scales)</code></pre></div>
 <pre><code>## 
 ## Attaching package: 'scales'</code></pre>
@@ -291,11 +294,12 @@ gg</code></pre></div>
 <div id="step-2" class="section level2">
 <h2>Step 2</h2>
 <p><strong>Please explain if the results are the same using the two different ids and if not why not.</strong></p>
-<p>I am not entirely confident if I correctly unerstood the question. But at this point we should notice that it makes no sense whatsoever to group the users using their <code>device_id</code> because we have data only from one day. This implies that we can not know anything about those users at any other day.</p>
+<p>I am not entirely confident if I correctly unerstood the question. But at this point we should notice that it makes no sense whatsoever to group the users using their <code>device_id</code> in order to measure their retention, because we have only data from one day.</p>
 </div>
 <div id="step-3" class="section level2">
 <h2>Step 3</h2>
 <p><strong>Please explain how much of the variation in the 2nd day retention can be explained by whether or not the user completed the tutorial on the 1st day and whether it is a significant variable in understanding 2nd day retention. (You know if someone has complete the tutorial from the funnel steps in the user file. We are interested in the variable called funnel_1d and anyone with a funnel step higher than 2116 has completed the tutorial). You have to use a logistic regression.</strong></p>
+<p>As always, the first step is to gather and format data properly.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df.tutorial &lt;-<span class="st"> </span>raw.user[,<span class="kw">c</span>(<span class="st">&quot;user_id&quot;</span>, <span class="st">&quot;funnel_1d&quot;</span>)]
 df.tutorial<span class="op">$</span>tut &lt;-<span class="st"> </span><span class="kw">ifelse</span>(df.tutorial<span class="op">$</span>funnel_1d <span class="op">&gt;</span><span class="st"> </span><span class="dv">2116</span>, <span class="dv">1</span>, <span class="dv">0</span>)
 df.tutorial<span class="op">$</span>tut[<span class="kw">is.na</span>(df.tutorial<span class="op">$</span>tut)] &lt;-<span class="st"> </span><span class="dv">0</span>
@@ -318,7 +322,8 @@ tut.ret &lt;-<span class="st"> </span><span class="kw">merge</span>(pass.tutoria
 tut.ret<span class="op">$</span>tut &lt;-<span class="st"> </span><span class="kw">as.factor</span>(tut.ret<span class="op">$</span>tut)
 tut.ret<span class="op">$</span>ret2 &lt;-<span class="st"> </span><span class="kw">as.factor</span>(tut.ret<span class="op">$</span>ret2)</code></pre></div>
 <p>Now we have the data ready for testing and doing regressions.</p>
-<p>The first question to be answered now is whether or not these two variables we are considering are correlated. Our variables are cathegorical. This means that they do not express a magnitude by a factor that labels a category. Two cathegorical variables can be correlated in the same sense as two numerical variables; but the statistical test performed for each case is quite different. To measure the dependence between cathegorical variables there is a widely used test, named <em>Chi-Squared Test</em>. Using this test, we can decide whether or not two cathegorical variables are correlated.</p>
+<p>The first question to be answered now is whether or not these two variables we are considering are correlated. Our variables are cathegorical. This means that they do not express a magnitude, but a factor that labels a category. Two cathegorical variables can be correlated in the same sense as two numerical variables; but the statistical test performed for each case is quite different.</p>
+<p>To measure the dependence between cathegorical variables there is a widely used test, named <em>Chi-Squared Test</em>. Using this test, we can decide whether or not two cathegorical variables are correlated.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(MASS)</code></pre></div>
 <pre><code>## 
 ## Attaching package: 'MASS'</code></pre>
@@ -333,6 +338,7 @@ tut.ret<span class="op">$</span>ret2 &lt;-<span class="st"> </span><span class="
 ## data:  tb1
 ## X-squared = 2168.5, df = 1, p-value &lt; 2.2e-16</code></pre>
 <p>The result of this test is plainly clear. This result states that these variables are not independent. Thus, we conclude that there is a relationship between having finished the tutorial and the 2nd day retention.</p>
+<p>I am fully aware that the question specificaly asked for a <em>Logistic Regression</em> in order to check this relationship, but I found interesting to start with a simpler statistical test and see if they agree.</p>
 <p>Now, we can check further the relationship between these variables using a <em>Logistic Regression</em>. The point of using this regression is that is common to predict categorical outcomes using categorical variables. We can perform a Logistic Regression trying to predict whether or not some player have been retented the 2nd day since its regristration and determine if the <code>tutorial</code> variable (which is categorical) is useful for this prediction.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">glm</span>(tut.ret<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>tut.ret<span class="op">$</span>tut, <span class="dt">family =</span> binomial)
 <span class="kw">summary</span>(model)</code></pre></div>
@@ -359,8 +365,8 @@ tut.ret<span class="op">$</span>ret2 &lt;-<span class="st"> </span><span class="
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
 <p>Considering the pvalue obtained, the variable that indicates whether or not a player was completed the tutorial is relevant to determine the 2nd day retention of that player.</p>
-<p>Now that we know that the variable <em>is</em> relevant, we could ask <em>how much</em> relevant it is. Or, in other words, how much variation of the prediction on the 2nd day retention is caused by this variable. In Logistic Regression, technically we can not talk about any measure of <em>How much variation can be explained by this variable</em>. If we were talking about linear regression we could simply compute the <span class="math inline">\(R^2\)</span> and interpret its result as the percentage of the variation that could be explained with the variable; but there is no such thing in Logistic Regression. Notwithstanding, there are some so-called pseudo-<span class="math inline">\(R^2\)</span> as <code>Cos &amp; Snell</code> and <code>Nagelkerke</code>.</p>
-<p>Now we are going to apply the latter, since it is an adjustment of the former.</p>
+<p>Now that we know that the variable <em>is</em> relevant, we could ask <em>how much</em> relevant it is. Or, in other words, how much variation of the prediction on the 2nd day retention is caused by this variable. In Logistic Regression, technically we can not talk about any measure of <em>How much variation can be explained by this variable</em>. If we were talking about linear regression we could simply compute the <span class="math inline">\(R^2\)</span> and interpret its result as the percentage of the variation that could be explained with the variable; but there is no such thing in Logistic Regression. Notwithstanding, there are some so-called pseudo-<span class="math inline">\(R^2\)</span> as <code>Cox &amp; Snell</code> and <code>Nagelkerke</code>.</p>
+<p>Now we are going to apply the latter, since it is an adjustment of the former and thus more general. There are many different pseudo-<span class="math inline">\(R^2\)</span> for a Logistic Regression model, and each one of them has its flaws. Since the thorough analysis of them lands out of the scope of this project, we will simply use one whose usage in <code>R</code> straightforward and it has good documentation.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rms)</code></pre></div>
 <pre><code>## Loading required package: Hmisc</code></pre>
 <pre><code>## Loading required package: lattice</code></pre>
@@ -400,12 +406,15 @@ model2 &lt;-<span class="st"> </span><span class="kw">lrm</span>(y <span class="
 ##  Intercept -4.9254 0.0970 -50.77 &lt;0.0001 
 ##  x          2.1428 0.0519  41.31 &lt;0.0001 
 ## </code></pre>
-<p>The output of this model leads to a Nagelkerke’s <span class="math inline">\(R^2= 0.196\)</span> which seems pretty low. Could we say that a <span class="math inline">\(12.30\%\)</span> of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not (see [1]), but it is the closest interpretation we can conclude.</p>
+<p>The output of this model leads to a Nagelkerke’s <span class="math inline">\(R^2= 0.196\)</span>. Could we say that a <span class="math inline">\(19.60\%\)</span> of the variance of the 2nd day retention can be explain from the variable that states whether or not a user has finished his tutorial? Technically, we should not [1], but it is the closest interpretation we can use [2] and it can be useful to compare the influence of different variables [1].</p>
 <p>[1]: <a href="https://www.amazon.com/Applied-Logistic-Regression-Probability-Statistics/dp/0471356328"><em>D.W. Hosmer and S. Lemeshow</em> (2000). Applied Logistic Regression</a></p>
+<p>[2]: <a href="http://onlinelibrary.wiley.com.are.uab.cat/doi/10.1002/(SICI)1097-0258(19961015)15:19%3C1987::AID-SIM318%3E3.0.CO%3b2-9/full"><em>Martina Mittlböck and Michael Schemper</em> (1996). Explained Variation for Logistic Regression. <em>Statistics in Medicine</em>. Volume 15: Pages 1987-1997</a></p>
 </div>
 <div id="step-4" class="section level2">
 <h2>Step 4:</h2>
 <p><strong>Please identify two other significant variables that we should look at to improve day 2 retention and quantify how mmuch of the variation in retention can be explained by these variables.</strong></p>
+<p>Once we know how to measure the relevancy of one variable and we have accepted it, we can look further for more variables to consider.</p>
+<p>As always, gathering and good formatting of data in order to perform the logistic regression. In this case, we will give a try to the <code>registration platform</code> and to the <code>country</code> of the user.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span>raw.user[,<span class="kw">c</span>(<span class="st">&quot;user_id&quot;</span>, <span class="st">&quot;register_platform&quot;</span>, <span class="st">&quot;register_ip_country&quot;</span>)]
 x<span class="op">$</span>user_id &lt;-<span class="st"> </span><span class="kw">as.factor</span>(x<span class="op">$</span>user_id)
 x<span class="op">$</span>register_platform &lt;-<span class="st"> </span><span class="kw">as.factor</span>(x<span class="op">$</span>register_platform)
@@ -417,14 +426,8 @@ df &lt;-<span class="st"> </span><span class="kw">merge</span>(tut.ret, x, <span
 df &lt;-<span class="st"> </span>df[<span class="op">!</span><span class="kw">duplicated</span>(df),]
 
 <span class="co"># Perform Logistic Regression</span>
-<span class="kw">rm</span>(df.tutorial, g, model, model2, pass.tutorial, reg, ret, ret2, ret2f, tut.ret, x, a, tb1, y ,z)</code></pre></div>
-<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
-## ret2, : object 'g' not found</code></pre>
-<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
-## ret2, : object 'a' not found</code></pre>
-<pre><code>## Warning in rm(df.tutorial, g, model, model2, pass.tutorial, reg, ret,
-## ret2, : object 'z' not found</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">glm</span>(df<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>df<span class="op">$</span>register_platform <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>register_ip_country <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>tut, <span class="dt">family =</span> binomial)
+<span class="kw">rm</span>(df.tutorial, model, model2, pass.tutorial, reg, ret, ret2, ret2f, tut.ret, x, tb1, y)
+model &lt;-<span class="st"> </span><span class="kw">glm</span>(df<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>df<span class="op">$</span>register_platform <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>register_ip_country <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>tut, <span class="dt">family =</span> binomial)
 <span class="kw">summary</span>(model)</code></pre></div>
 <pre><code>## 
 ## Call:
@@ -603,8 +606,9 @@ df &lt;-<span class="st"> </span>df[<span class="op">!</span><span class="kw">du
 ## AIC: 16202
 ## 
 ## Number of Fisher Scoring iterations: 14</code></pre>
-<p>We just keep those variables that are useful and move on.</p>
+<p>It can be noticed that the country of the user is not a relevant variable to determine the 2nd day retention whatsoever. So we now drop those variables that have not been relevant enough.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">imp.var &lt;-<span class="st"> </span>df[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;register_ip_country&quot;</span>)]</code></pre></div>
+<p>And repeat the regression.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">glm</span>(df<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>df<span class="op">$</span>register_platform <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>tut, <span class="dt">family =</span> binomial)
 <span class="kw">summary</span>(model)</code></pre></div>
 <pre><code>## 
@@ -630,8 +634,8 @@ df &lt;-<span class="st"> </span>df[<span class="op">!</span><span class="kw">du
 ## AIC: 16260
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
-<p>Whereas the <code>tutorial</code> variable relevance is out of doubt, this variable concerning the platform in which the game has been installed is relevant just by the standard metrics (pvalue below <span class="math inline">\(0.05\)</span>).</p>
-<p>Let’s finde some other useful variables.</p>
+<p>Whereas the <code>tutorial</code> variable relevance is out of doubt, this variable concerning the platform in which the game has been installed is relevant just by the standard metrics (pvalue below <span class="math inline">\(0.05\)</span>). All in all, we can confirm the relevancy of our variables and continue.</p>
+<p>Let’s find some other useful variables. For this purpose, we build variables out of the <code>register date</code>. From this feature we can deducte the month in which the user registered, the year and the day of the week.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x &lt;-<span class="st"> </span>raw.user[,<span class="kw">c</span>(<span class="st">&quot;user_id&quot;</span>, <span class="st">&quot;date_register&quot;</span>)]
 x<span class="op">$</span>user_id &lt;-<span class="st"> </span><span class="kw">as.factor</span>(x<span class="op">$</span>user_id)
 x<span class="op">$</span>date_register &lt;-<span class="st"> </span><span class="kw">date</span>(x<span class="op">$</span>date_register)
@@ -686,7 +690,7 @@ model &lt;-<span class="st"> </span><span class="kw">glm</span>(df<span class="o
 ## AIC: 16150
 ## 
 ## Number of Fisher Scoring iterations: 14</code></pre>
-<p>Turns out that the <code>month</code> and the <code>year</code> in which a user has been registrated is of no importance in order to predict the 2nd day retention. What it is interesting is the great importance of the day of the week in which the registration was maded. Let’s isolate a bit the non-relevant variables and see with more detail what happens to this <code>weekday</code> variable.</p>
+<p>Turns out that the <code>month</code> and the <code>year</code> in which a user has been registered is of no importance in order to predict the 2nd day retention. What it is interesting is the great importance of the day of the week in which the registration was made. Let’s isolate a bit the non-relevant variables and see with more detail what happens to this <code>weekday</code> variable.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">df &lt;-<span class="st"> </span>df[,<span class="op">-</span><span class="kw">c</span>(<span class="st">&quot;month_register&quot;</span>, <span class="st">&quot;year_register&quot;</span>)]</code></pre></div>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">model &lt;-<span class="st"> </span><span class="kw">glm</span>(df<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>df<span class="op">$</span>tut <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>register_platform <span class="op">+</span><span class="st"> </span>df<span class="op">$</span>wday_register, <span class="dt">family=</span>binomial)
 
@@ -741,19 +745,15 @@ modelwed &lt;-<span class="st"> </span><span class="kw">lrm</span>(<span class="
 modelmon &lt;-<span class="st"> </span><span class="kw">lrm</span>(<span class="dt">formula =</span> test<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>test<span class="op">$</span>monday)
 modeltue &lt;-<span class="st"> </span><span class="kw">lrm</span>(<span class="dt">formula =</span> test<span class="op">$</span>ret2 <span class="op">~</span><span class="st"> </span>test<span class="op">$</span>tuesday)
 
-modeltut<span class="op">$</span>stats[<span class="dv">10</span>]</code></pre></div>
-<pre><code>##        R2 
-## 0.1952651</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modelwed<span class="op">$</span>stats[<span class="dv">10</span>]</code></pre></div>
-<pre><code>##          R2 
-## 0.002457038</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modelmon<span class="op">$</span>stats[<span class="dv">10</span>]</code></pre></div>
-<pre><code>##          R2 
-## 0.001381453</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">modeltue<span class="op">$</span>stats[<span class="dv">10</span>]</code></pre></div>
-<pre><code>##          R2 
-## 0.001280012</code></pre>
-<p>Despite that the statistical tests stated that these are relevant variables, we can notice how small their pseudo-<span class="math inline">\(R^2\)</span> are, compared to our first variable.</p>
+<span class="kw">paste</span>(<span class="st">&quot;Tutorial: R^2 = &quot;</span>, modeltut<span class="op">$</span>stats[<span class="dv">10</span>])</code></pre></div>
+<pre><code>## [1] &quot;Tutorial: R^2 =  0.195265086396371&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>(<span class="st">&quot;Mondays: R^2 = &quot;</span>, modelmon<span class="op">$</span>stats[<span class="dv">10</span>])</code></pre></div>
+<pre><code>## [1] &quot;Mondays: R^2 =  0.0013814526125069&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>(<span class="st">&quot;Tuesdays: R^2 = &quot;</span>, modeltue<span class="op">$</span>stats[<span class="dv">10</span>])</code></pre></div>
+<pre><code>## [1] &quot;Tuesdays: R^2 =  0.00128001198125665&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">paste</span>(<span class="st">&quot;Wednesdays: R^2 = &quot;</span>, modelwed<span class="op">$</span>stats[<span class="dv">10</span>])</code></pre></div>
+<pre><code>## [1] &quot;Wednesdays: R^2 =  0.00245703813775275&quot;</code></pre>
+<p>Despite that the statistical tests stated that these are relevant variables, we can notice how small their pseudo-<span class="math inline">\(R^2\)</span> are, compared to our first variable. This leads to the conclusion that <code>tutorial</code> is the most relevant variable to explain the variance of the 2nd day retention.</p>
 </div>
 </section>
 
