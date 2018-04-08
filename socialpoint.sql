@@ -45,9 +45,7 @@ GROUP BY DATE(date);
 
 ######## DARPU (daily average revenues per active user) by day
 
-SELECT DATE(transaction.date), SUM(transaction.dollar_net)
-FROM transaction
-GROUP BY DATE(transaction.date);
+# Work in Progress...
 
 
 

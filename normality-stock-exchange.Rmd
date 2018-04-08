@@ -35,7 +35,7 @@ plot(lr, main = "S&P daily logreturn", ylab="logreturn")
 A histogram showing the frequency of these logreturns should hint us about the normality of its distribution.
 
 ```{r}
-hlr <- hist(lr, main = "Histogram for S&P daily logreturn", xlab="logreturn", ylab="normalized frequency", border="blue", col="green", xlim=c(-0.1,0.1), las=1, breaks=500, prob=TRUE)
+hlr <- hist(lr, main = "Histogram for S&P daily logreturn", xlab="logreturn", ylab="normalized frequency", border="navy blue", xlim=c(-0.1,0.1), las=1, breaks=500, prob=TRUE)
 ```
 Is this a *normal* distribution? There are several different means to check thte normality of a distribution. One widely used way is to perform an statistical test, such as the *Anderson-Darling* normality test:
 
