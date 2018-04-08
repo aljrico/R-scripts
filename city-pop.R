@@ -1,4 +1,8 @@
 
+
+
+
+
 # Functions ---------------------------------------------------------------
 
 library(ggplot2)
@@ -57,16 +61,13 @@ getHistPop <- function(link){
 	df <- df[-1, c(1,2)]
 	df[,2] <- as.numeric(gsub(",", "",df[,2]))
 	#if(df[nrow(df),1] != 2016){df[nrow,1] == 2016}
-	df[,1] <- as.numeric(gsub("[^0-9\\.]", "" ,df[,1]))
+	df[,1] <- as.integer(gsub("[^0-9\\.]", "" ,df[,1]))
 	df <- df[complete.cases(df),]
 	colnames(df) <- c("year", "population")
 	return(df)
 }
 
 hist_pop <- list()
-count <- 1
-for(j in links){
-	hist_pop[[j]] <- getHistPop(j)
-	names(hist_pop[j]) <- citynames[[count]]
-	count <- count + 1
+for(i in 1:length(links)){
+	hist_pop[[citynames[[i]]]] <- getHistPop(links[[i]])
 }
