@@ -26,6 +26,11 @@ mytable <- read_html(url) %>%
 # Extract table of interest
 most_pop_cities <- mytable[[4]] %>% html_table(fill = TRUE, header = NA)
 
+# Extract url to cities websites
+links <- mytable[[4]] %>% html_nodes("td:nth-child(2) a") %>% html_attr("href")
+links <- links[!grepl("#", links)]
+
+
 # Cleaning
 most_pop_cities <- most_pop_cities[,c(4,2)]
 colnames(most_pop_cities) <- c("pop", "city")
@@ -35,24 +40,33 @@ most_pop_cities$pop <- as.numeric(gsub(",", "", most_pop_cities$pop))
 	
 # Historical of each City ----------------------------------------------------
 
-cityname <- gsub(" ", "_",most_pop_cities$city)
+citynames <- gsub(" ", "_",most_pop_cities$city)
 
-function(cityname){
-	if(cityname == "New_York") {cityname <- paste0(cityname, "_City")}
-	if(cityname == "Phoenix"){cityname <- paste0("Phoenix,_Arizona")}
-	path <- paste0("https://en.wikipedia.org/wiki/",cityname)
+# Function
+getHistPop <- function(link){
+	path <- paste0("https://en.wikipedia.org",link)
 		url <- path
 	mytable <- read_html(url) %>% 
 		html_nodes("table")
 		
-	tr <- which(grepl("toccolours", mytable))
+	tr <- which(grepl("toccolours", mytable))[[1]]
 	
 		
 		# Cleaning	
 	df <- mytable[[tr]] %>% html_table(fill = TRUE, header = NA)
 	df <- df[-1, c(1,2)]
 	df[,2] <- as.numeric(gsub(",", "",df[,2]))
+	#if(df[nrow(df),1] != 2016){df[nrow,1] == 2016}
+	df[,1] <- as.numeric(gsub("[^0-9\\.]", "" ,df[,1]))
 	df <- df[complete.cases(df),]
-		hist_pop[[cityname]] <- df
-	return(hist_pop)
+	colnames(df) <- c("year", "population")
+	return(df)
+}
+
+hist_pop <- list()
+count <- 1
+for(j in links){
+	hist_pop[[j]] <- getHistPop(j)
+	names(hist_pop[j]) <- citynames[[count]]
+	count <- count + 1
 }
