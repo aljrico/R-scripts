@@ -67,6 +67,8 @@ getHistPop <- function(link){
 	return(df)
 }
 
+
+
 hist_pop <- list()
 for(i in 1:length(links)){
 	hist_pop[[i]] <- getHistPop(links[[i]])
